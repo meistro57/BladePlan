@@ -1,6 +1,7 @@
-from flask import render_template, request
-from app import app
+from flask import Flask, render_template, request
 import re
+
+app = Flask(__name__)
 
 
 def parse_length(length_str: str) -> float:
