@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request
+import csv
+import io
 import re
 
 app = Flask(__name__)
@@ -61,6 +63,42 @@ def parse_stock(text: str):
     return stocks
 
 
+def parse_parts_csv(file) -> list:
+    """Parse parts from a CSV file stream."""
+    parts = []
+    data = file.read()
+    if not data:
+        return parts
+    text = data.decode() if isinstance(data, bytes) else data
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        qty = int(row.get('qty', '0'))
+        mark = row.get('mark', '').strip()
+        length_str = row.get('length', '').strip()
+        length = parse_length(length_str)
+        for _ in range(qty):
+            parts.append({'mark': mark, 'length': length, 'length_str': length_str})
+    return parts
+
+
+def parse_stock_csv(file) -> list:
+    """Parse stock lengths from a CSV file stream."""
+    stocks = []
+    data = file.read()
+    if not data:
+        return stocks
+    text = data.decode() if isinstance(data, bytes) else data
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        qty = int(row.get('qty', '0'))
+        length_str = row.get('length', '').strip()
+        length = parse_length(length_str)
+        for _ in range(qty):
+            stocks.append({'length': length, 'length_str': length_str})
+    stocks.sort(key=lambda x: -x['length'])
+    return stocks
+
+
 def optimize_cuts(parts, stocks):
     bins = []
     for stock in stocks:
@@ -119,10 +157,20 @@ def index():
 
 @app.route('/optimize', methods=['POST'])
 def optimize():
-    parts_input = request.form.get('parts', '')
-    stock_input = request.form.get('stock', '')
-    parts = parse_parts(parts_input)
-    stocks = parse_stock(stock_input)
+    parts_file = request.files.get('parts_file')
+    stock_file = request.files.get('stock_file')
+
+    if parts_file and parts_file.filename:
+        parts = parse_parts_csv(parts_file)
+    else:
+        parts_input = request.form.get('parts', '')
+        parts = parse_parts(parts_input)
+
+    if stock_file and stock_file.filename:
+        stocks = parse_stock_csv(stock_file)
+    else:
+        stock_input = request.form.get('stock', '')
+        stocks = parse_stock(stock_input)
     bins, uncut = optimize_cuts(parts, stocks)
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']

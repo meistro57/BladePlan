@@ -20,8 +20,8 @@ Get a complete breakdown of which parts are cut from which sticks, how much mate
 📝 **Web Interface**  
 Lightweight Flask-based interface. No installation mess. Enter your data, hit optimize, and go.
 
-📦 **CSV-Friendly Format** *(Coming soon)*  
-Planned support for importing/exporting parts lists via CSV.
+📦 **CSV-Friendly Format**
+Import your parts and stock lists from CSV files or type them in manually.
 
 ⚔️ **Wasteless Warrior Mode** *(In development)*  
 Support for kerf width, trim order visualization, and printable cut sheets.
@@ -93,7 +93,7 @@ Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser 🧠�
 ## 🧭 Roadmap
 - [ ] Kerf width input
 - [ ] Visual stick layout diagram
-- [ ] CSV import/export
+ - [x] CSV import/export
 - [ ] PDF cut sheet generator
 - [ ] Mobile-friendly layout
 - [ ] Auto-saving job history
