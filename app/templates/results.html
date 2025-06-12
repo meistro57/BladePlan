@@ -15,9 +15,9 @@
         <th>Remaining Scrap</th>
         <th>Parts</th>
     </tr>
-    {% for i, b in enumerate(bins, start=1) %}
+    {% for b in bins %}
     <tr>
-        <td>{{ i }}</td>
+        <td>{{ loop.index }}</td>
         <td>{{ format_length(b.stock_length) }}</td>
         <td>{{ format_length(b.used) }}</td>
         <td>{{ format_length(b.remaining) }}</td>
