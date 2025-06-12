@@ -1,8 +1,11 @@
 import unittest
+import io
 from app.cut_optimizer_app import (
     parse_length,
     parse_parts,
     parse_stock,
+    parse_parts_csv,
+    parse_stock_csv,
     optimize_cuts,
 )
 
@@ -21,6 +24,14 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(len(parts), 3)
         stock = parse_stock(stock_text)
         self.assertEqual(len(stock), 2)
+
+    def test_parse_csv(self):
+        parts_csv = io.StringIO('qty,mark,length\n1,A,5\'\n')
+        stock_csv = io.StringIO('qty,length\n1,10\'\n')
+        parts = parse_parts_csv(parts_csv)
+        stock = parse_stock_csv(stock_csv)
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(len(stock), 1)
 
     def test_optimize_cuts(self):
         parts = [
