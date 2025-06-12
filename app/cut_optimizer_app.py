@@ -1,5 +1,5 @@
 from flask import render_template, request
-from . import app
+from app import app
 import re
 
 
