@@ -133,20 +133,25 @@ def format_length(inches: float) -> str:
     if num == denom:
         whole += 1
         num = 0
+
     parts = []
     if feet:
         parts.append(f"{feet}'")
+
     inch_part = ''
     if whole or num:
         inch_part = f"{whole}" if whole else '0'
         if num:
-            inch_part += f" {num}/{denom}"
+            from math import gcd
+            g = gcd(num, denom)
+            simple_num = num // g
+            simple_denom = denom // g
+            inch_part += f" {simple_num}/{simple_denom}"
         inch_part += '"'
+
     if inch_part:
-        if feet:
-            parts.append(inch_part)
-        else:
-            parts.append(inch_part)
+        parts.append(inch_part)
+
     return ' '.join(parts) if parts else '0"'
 
 
