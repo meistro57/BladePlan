@@ -5,7 +5,6 @@ and matches best cuts from available stock.
 
 import argparse
 from typing import List, Tuple
-import mysql.connector
 
 from ...config.config import POOL
 

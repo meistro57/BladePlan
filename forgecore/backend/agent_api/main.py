@@ -6,8 +6,6 @@ import argparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 
-from ...config.config import POOL
-
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):

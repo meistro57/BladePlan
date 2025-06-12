@@ -1,7 +1,6 @@
 """Configuration and database connector for ForgeCore."""
 
 import os
-import mysql.connector
 from mysql.connector import pooling
 
 
