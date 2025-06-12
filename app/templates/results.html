@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Cut Plan Results</title>
+</head>
+<body>
+<h1>Optimized Cut Plan</h1>
+<table border="1" cellpadding="5" cellspacing="0">
+    <tr>
+        <th>Stick #</th>
+        <th>Stock Length</th>
+        <th>Total Used</th>
+        <th>Remaining Scrap</th>
+        <th>Parts</th>
+    </tr>
+    {% for i, b in enumerate(bins, start=1) %}
+    <tr>
+        <td>{{ i }}</td>
+        <td>{{ format_length(b.stock_length) }}</td>
+        <td>{{ format_length(b.used) }}</td>
+        <td>{{ format_length(b.remaining) }}</td>
+        <td>
+            <ul>
+            {% for p in b.parts %}
+                <li>{{ p.mark }} - {{ format_length(p.length) }}</li>
+            {% endfor %}
+            </ul>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% if uncut %}
+<h2>Uncut Parts</h2>
+<ul>
+{% for p in uncut %}
+    <li>{{ p.mark }} - {{ format_length(p.length) }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<a href="/">Back</a>
+</body>
+</html>
