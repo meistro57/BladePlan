@@ -99,7 +99,7 @@ def parse_stock_csv(file) -> list:
     return stocks
 
 
-def optimize_cuts(parts, stocks):
+def optimize_cuts(parts, stocks, kerf_width: float = 0.0):
     bins = []
     for stock in stocks:
         bins.append({
@@ -113,9 +113,12 @@ def optimize_cuts(parts, stocks):
     for part in parts_sorted:
         placed = False
         for b in bins:
-            if part['length'] <= b['remaining']:
+            required = part['length']
+            if b['parts']:
+                required += kerf_width
+            if required <= b['remaining']:
                 b['parts'].append(part)
-                b['remaining'] -= part['length']
+                b['remaining'] -= required
                 placed = True
                 break
         if not placed:
@@ -176,10 +179,14 @@ def optimize():
     else:
         stock_input = request.form.get('stock', '')
         stocks = parse_stock(stock_input)
-    bins, uncut = optimize_cuts(parts, stocks)
+
+    kerf_str = request.form.get('kerf_width', '0')
+    kerf_width = parse_length(kerf_str) if kerf_str.strip() else 0.0
+
+    bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']
-    return render_template('results.html', bins=bins, uncut=uncut, format_length=format_length)
+    return render_template('results.html', bins=bins, uncut=uncut, kerf_width=kerf_width, format_length=format_length)
 
 
 if __name__ == '__main__':
