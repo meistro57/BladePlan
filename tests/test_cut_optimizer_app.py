@@ -44,6 +44,15 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(len(bins[0]['parts']), 2)
         self.assertAlmostEqual(bins[0]['remaining'], 12)
 
+    def test_optimize_cuts_with_kerf(self):
+        parts = [
+            {'mark': 'A', 'length': 50, 'length_str': "50"},
+            {'mark': 'B', 'length': 50, 'length_str': "50"},
+        ]
+        stock = [{'length': 100, 'length_str': "100"}]
+        bins, uncut = optimize_cuts(parts, stock, kerf_width=0.125)
+        self.assertEqual(len(uncut), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

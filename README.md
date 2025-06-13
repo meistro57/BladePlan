@@ -25,8 +25,8 @@ Lightweight Flask-based interface. No installation mess. Enter your data, hit op
 📦 **CSV-Friendly Format**
 Import your parts and stock lists from CSV files or type them in manually.
 
-⚔️ **Wasteless Warrior Mode** *(In development)*  
-Support for kerf width, trim order visualization, and printable cut sheets.
+⚔️ **Wasteless Warrior Mode** *(In development)*
+Kerf width input supported. Trim order visualization and printable cut sheets still in progress.
 
 ---
 
@@ -93,7 +93,7 @@ Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser 🧠�
 ---
 
 ## 🧭 Roadmap
-- [ ] Kerf width input
+- [x] Kerf width input
 - [ ] Visual stick layout diagram
  - [x] CSV import/export
 - [ ] PDF cut sheet generator
