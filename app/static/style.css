@@ -47,3 +47,23 @@ td, th {
     border: 1px solid #ccc;
     padding: 8px;
 }
+
+.stick {
+    display: flex;
+    height: 20px;
+    margin-top: 10px;
+    background: #e0e0e0;
+}
+.stick span {
+    display: block;
+    height: 100%;
+}
+.stick .kerf {
+    background: #fff;
+}
+.stick .scrap {
+    background: #f44336;
+}
+.stick .part {
+    background: #4caf50;
+}

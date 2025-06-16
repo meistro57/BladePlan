@@ -16,8 +16,11 @@ Enter your parts list and stock inventory using real-world formats like `14' 3 1
 🧠 **Smart Cut Optimization**  
 Uses a First-Fit Decreasing (FFD) nesting algorithm to assign parts to stock lengths while minimizing waste. Simple, fast, and effective.
 
-📊 **Clear, Interactive Output**  
+📊 **Clear, Interactive Output**
 Get a complete breakdown of which parts are cut from which sticks, how much material is used, and how much is left.
+
+📐 **Stick Layout Diagram**
+Visual diagram showing where each part fits on a stock stick right in the results page.
 
 📝 **Web Interface**  
 Lightweight Flask-based interface. No installation mess. Enter your data, hit optimize, and go.
@@ -94,8 +97,8 @@ Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser 🧠�
 
 ## 🧭 Roadmap
 - [x] Kerf width input
-- [ ] Visual stick layout diagram
- - [x] CSV import/export
+- [x] Visual stick layout diagram
+- [x] CSV import/export
 - [ ] PDF cut sheet generator
 - [ ] Mobile-friendly layout
 - [ ] Auto-saving job history
