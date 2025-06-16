@@ -1,5 +1,7 @@
 import unittest
 import io
+import pathlib
+import tempfile
 from app.cut_optimizer_app import (
     parse_length,
     parse_parts,
@@ -7,6 +9,7 @@ from app.cut_optimizer_app import (
     parse_parts_csv,
     parse_stock_csv,
     optimize_cuts,
+    export_cutting_plan_pdf,
 )
 
 
@@ -52,6 +55,22 @@ class TestCutOptimizer(unittest.TestCase):
         stock = [{'length': 100, 'length_str': "100"}]
         bins, uncut = optimize_cuts(parts, stock, kerf_width=0.125)
         self.assertEqual(len(uncut), 1)
+
+    def test_export_cutting_plan_pdf(self):
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = pathlib.Path(tmpdir) / 'report.pdf'
+            export_cutting_plan_pdf(bins, uncut, 0.0, str(path))
+            self.assertTrue(path.exists())
+            self.assertGreater(path.stat().st_size, 0)
 
 
 if __name__ == '__main__':

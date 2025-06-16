@@ -158,6 +158,88 @@ def format_length(inches: float) -> str:
     return ' '.join(parts) if parts else '0"'
 
 
+def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> None:
+    """Generate a PDF report of the optimized cut plan.
+
+    Parameters
+    ----------
+    bins : list
+        List of bins returned by :func:`optimize_cuts`.
+    uncut : list
+        Parts that could not be assigned to a stock length.
+    kerf_width : float
+        Kerf width in inches.
+    filename : str
+        Destination path for the generated PDF file.
+    """
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Table,
+        TableStyle,
+        Paragraph,
+        Spacer,
+    )
+
+    doc = SimpleDocTemplate(filename, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = [
+        Paragraph("Optimized Cut Plan", styles["Heading1"]),
+        Paragraph(f"Kerf width: {format_length(kerf_width)}", styles["Normal"]),
+        Spacer(1, 12),
+    ]
+
+    data = [[
+        "Stick #",
+        "Stock Length",
+        "Total Used",
+        "Remaining Scrap",
+        "Parts",
+    ]]
+
+    for idx, b in enumerate(bins, start=1):
+        parts_list = ", ".join(
+            f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
+        )
+        data.append(
+            [
+                str(idx),
+                format_length(b["stock_length"]),
+                format_length(b["used"]),
+                format_length(b["remaining"]),
+                parts_list,
+            ]
+        )
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ]
+        )
+    )
+    elements.append(table)
+
+    if uncut:
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("Uncut Parts", styles["Heading2"]))
+        for p in uncut:
+            elements.append(
+                Paragraph(
+                    f"{p['mark']} - {format_length(p['length'])}",
+                    styles["Normal"],
+                )
+            )
+
+    doc.build(elements)
+
+
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
