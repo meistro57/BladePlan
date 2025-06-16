@@ -158,6 +158,29 @@ def format_length(inches: float) -> str:
     return ' '.join(parts) if parts else '0"'
 
 
+def generate_layout_data(bins, kerf_width: float) -> list:
+    """Return visual layout information for each bin.
+
+    Each bin is represented as a list of segments with ``label`` and ``length``
+    keys. ``Kerf`` and remaining scrap are included as separate segments so the
+    caller can render a proportional layout.
+    """
+    layout_bins = []
+    for b in bins:
+        segments = []
+        remaining = b['stock_length']
+        for i, part in enumerate(b['parts']):
+            segments.append({'label': part['mark'], 'length': part['length']})
+            remaining -= part['length']
+            if kerf_width and i < len(b['parts']) - 1:
+                segments.append({'label': 'Kerf', 'length': kerf_width})
+                remaining -= kerf_width
+        if remaining > 0:
+            segments.append({'label': 'Scrap', 'length': remaining})
+        layout_bins.append(segments)
+    return layout_bins
+
+
 def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> None:
     """Generate a PDF report of the optimized cut plan.
 
@@ -268,7 +291,15 @@ def optimize():
     bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']
-    return render_template('results.html', bins=bins, uncut=uncut, kerf_width=kerf_width, format_length=format_length)
+    layout = generate_layout_data(bins, kerf_width)
+    return render_template(
+        'results.html',
+        bins=bins,
+        uncut=uncut,
+        kerf_width=kerf_width,
+        layout=layout,
+        format_length=format_length,
+    )
 
 
 if __name__ == '__main__':

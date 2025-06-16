@@ -32,6 +32,15 @@
     </tr>
     {% endfor %}
 </table>
+
+<h2>Layout</h2>
+{% for b, segments in zip(bins, layout) %}
+<div class="stick">
+    {% for seg in segments %}
+    <span class="{{ seg.label|lower }}" style="width: {{ (seg.length / b.stock_length) * 100 }}%" title="{{ seg.label }} - {{ format_length(seg.length) }}"></span>
+    {% endfor %}
+</div>
+{% endfor %}
 {% if uncut %}
 <h2>Uncut Parts</h2>
 <ul>

@@ -10,6 +10,7 @@ from app.cut_optimizer_app import (
     parse_stock_csv,
     optimize_cuts,
     export_cutting_plan_pdf,
+    generate_layout_data,
 )
 
 
@@ -71,6 +72,23 @@ class TestCutOptimizer(unittest.TestCase):
             export_cutting_plan_pdf(bins, uncut, 0.0, str(path))
             self.assertTrue(path.exists())
             self.assertGreater(path.stat().st_size, 0)
+
+    def test_generate_layout_data(self):
+        bins = [
+            {
+                'stock_length': 100,
+                'remaining': 20,
+                'parts': [
+                    {'mark': 'A', 'length': 40},
+                    {'mark': 'B', 'length': 40},
+                ],
+            }
+        ]
+        layout = generate_layout_data(bins, 0.0)
+        self.assertEqual(len(layout), 1)
+        segments = layout[0]
+        total = sum(s['length'] for s in segments)
+        self.assertAlmostEqual(total, 100)
 
 
 if __name__ == '__main__':
