@@ -49,6 +49,9 @@
 {% endfor %}
 </ul>
 {% endif %}
+<p>
+    <a href="{{ url_for('download_pdf', filename=pdf_filename) }}">Download PDF</a>
+</p>
 <a href="/">Back</a>
 </body>
 </html>

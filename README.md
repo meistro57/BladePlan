@@ -99,7 +99,7 @@ Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser ðŸ§ ðŸ’
 - [x] Kerf width input
 - [x] Visual stick layout diagram
 - [x] CSV import/export
-- [ ] PDF cut sheet generator
+- [x] PDF cut sheet generator
 - [ ] Mobile-friendly layout
 - [ ] Auto-saving job history
 

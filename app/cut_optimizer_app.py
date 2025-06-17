@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 import csv
 import io
+import os
 import re
+import tempfile
+import uuid
 
 app = Flask(__name__)
 
@@ -263,6 +266,13 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> No
     doc.build(elements)
 
 
+@app.route('/download_pdf/<filename>', methods=['GET'])
+def download_pdf(filename: str):
+    """Serve the generated PDF file as a download."""
+    pdf_path = os.path.join(tempfile.gettempdir(), filename)
+    return send_file(pdf_path, as_attachment=True, download_name='cut_plan.pdf')
+
+
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
@@ -292,12 +302,16 @@ def optimize():
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']
     layout = generate_layout_data(bins, kerf_width)
+    pdf_name = f"{uuid.uuid4()}.pdf"
+    pdf_path = os.path.join(tempfile.gettempdir(), pdf_name)
+    export_cutting_plan_pdf(bins, uncut, kerf_width, pdf_path)
     return render_template(
         'results.html',
         bins=bins,
         uncut=uncut,
         kerf_width=kerf_width,
         layout=layout,
+        pdf_filename=pdf_name,
         format_length=format_length,
     )
 
