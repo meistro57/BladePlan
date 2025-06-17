@@ -1,5 +1,6 @@
 import unittest
 import io
+import os
 import pathlib
 import tempfile
 from app.cut_optimizer_app import (
@@ -11,6 +12,7 @@ from app.cut_optimizer_app import (
     optimize_cuts,
     export_cutting_plan_pdf,
     generate_layout_data,
+    app,
 )
 
 
@@ -89,6 +91,24 @@ class TestCutOptimizer(unittest.TestCase):
         segments = layout[0]
         total = sum(s['length'] for s in segments)
         self.assertAlmostEqual(total, 100)
+
+    def test_download_pdf_route(self):
+        client = app.test_client()
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        path = os.path.join(tempfile.gettempdir(), 'route_test.pdf')
+        export_cutting_plan_pdf(bins, uncut, 0.0, path)
+        resp = client.get(f'/download_pdf/{os.path.basename(path)}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.mimetype, 'application/pdf')
+        os.remove(path)
 
 
 if __name__ == '__main__':
