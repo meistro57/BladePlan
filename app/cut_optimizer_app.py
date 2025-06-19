@@ -266,11 +266,46 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> No
     doc.build(elements)
 
 
+def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str) -> None:
+    """Generate a CSV report of the optimized cut plan."""
+    with open(filename, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Kerf width", format_length(kerf_width)])
+        writer.writerow([])
+        writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"])
+        for idx, b in enumerate(bins, start=1):
+            parts_list = ", ".join(
+                f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
+            )
+            writer.writerow(
+                [
+                    idx,
+                    format_length(b["stock_length"]),
+                    format_length(b["used"]),
+                    format_length(b["remaining"]),
+                    parts_list,
+                ]
+            )
+
+        if uncut:
+            writer.writerow([])
+            writer.writerow(["Uncut Parts"])
+            for p in uncut:
+                writer.writerow([p["mark"], format_length(p["length"])])
+
+
 @app.route('/download_pdf/<filename>', methods=['GET'])
 def download_pdf(filename: str):
     """Serve the generated PDF file as a download."""
     pdf_path = os.path.join(tempfile.gettempdir(), filename)
     return send_file(pdf_path, as_attachment=True, download_name='cut_plan.pdf')
+
+
+@app.route('/download_csv/<filename>', methods=['GET'])
+def download_csv(filename: str):
+    """Serve the generated CSV file as a download."""
+    csv_path = os.path.join(tempfile.gettempdir(), filename)
+    return send_file(csv_path, as_attachment=True, download_name='cut_plan.csv')
 
 
 @app.route('/', methods=['GET'])
@@ -305,6 +340,9 @@ def optimize():
     pdf_name = f"{uuid.uuid4()}.pdf"
     pdf_path = os.path.join(tempfile.gettempdir(), pdf_name)
     export_cutting_plan_pdf(bins, uncut, kerf_width, pdf_path)
+    csv_name = f"{uuid.uuid4()}.csv"
+    csv_path = os.path.join(tempfile.gettempdir(), csv_name)
+    export_cutting_plan_csv(bins, uncut, kerf_width, csv_path)
     return render_template(
         'results.html',
         bins=bins,
@@ -312,6 +350,7 @@ def optimize():
         kerf_width=kerf_width,
         layout=layout,
         pdf_filename=pdf_name,
+        csv_filename=csv_name,
         format_length=format_length,
     )
 

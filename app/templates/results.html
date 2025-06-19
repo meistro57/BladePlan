@@ -52,6 +52,8 @@
 {% endif %}
 <p>
     <a href="{{ url_for('download_pdf', filename=pdf_filename) }}">Download PDF</a>
+    |
+    <a href="{{ url_for('download_csv', filename=csv_filename) }}">Download CSV</a>
 </p>
 <a href="/">Back</a>
 </body>

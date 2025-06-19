@@ -19,6 +19,9 @@ Uses a First-Fit Decreasing (FFD) nesting algorithm to assign parts to stock len
 📊 **Clear, Interactive Output**
 Get a complete breakdown of which parts are cut from which sticks, how much material is used, and how much is left.
 
+📄 **CSV Cut Plan Export**
+Download the optimized plan as a CSV file for use in spreadsheets or other tools.
+
 📐 **Stick Layout Diagram**
 Visual diagram showing where each part fits on a stock stick right in the results page.
 
