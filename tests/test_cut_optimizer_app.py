@@ -11,6 +11,7 @@ from app.cut_optimizer_app import (
     parse_stock_csv,
     optimize_cuts,
     export_cutting_plan_pdf,
+    export_cutting_plan_csv,
     generate_layout_data,
     app,
 )
@@ -75,6 +76,22 @@ class TestCutOptimizer(unittest.TestCase):
             self.assertTrue(path.exists())
             self.assertGreater(path.stat().st_size, 0)
 
+    def test_export_cutting_plan_csv(self):
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = pathlib.Path(tmpdir) / 'report.csv'
+            export_cutting_plan_csv(bins, uncut, 0.0, str(path))
+            self.assertTrue(path.exists())
+            self.assertGreater(path.stat().st_size, 0)
+
     def test_generate_layout_data(self):
         bins = [
             {
@@ -108,6 +125,24 @@ class TestCutOptimizer(unittest.TestCase):
         resp = client.get(f'/download_pdf/{os.path.basename(path)}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, 'application/pdf')
+        os.remove(path)
+
+    def test_download_csv_route(self):
+        client = app.test_client()
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        path = os.path.join(tempfile.gettempdir(), 'route_test.csv')
+        export_cutting_plan_csv(bins, uncut, 0.0, path)
+        resp = client.get(f'/download_csv/{os.path.basename(path)}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.mimetype, 'text/csv')
         os.remove(path)
 
 
