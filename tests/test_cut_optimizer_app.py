@@ -3,6 +3,9 @@ import io
 import os
 import pathlib
 import tempfile
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from app.cut_optimizer_app import (
     parse_length,
     parse_parts,
