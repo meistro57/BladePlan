@@ -7,6 +7,9 @@ import tempfile
 import uuid
 
 app = Flask(__name__)
+# Expose Python's ``zip`` function to Jinja templates so they can iterate
+# over multiple sequences in parallel.
+app.jinja_env.globals.update(zip=zip)
 
 
 def parse_length(length_str: str) -> float:
