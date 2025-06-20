@@ -5,6 +5,8 @@
 BladePlan helps fabricators, makers, and metal sorcerers minimize material waste by calculating the most efficient way to cut a list of parts from your available stock lengths.
 
 ![image](https://github.com/user-attachments/assets/8d0e64b4-a4dd-43e5-9ed7-d5e3fcacb378)
+![image](https://github.com/user-attachments/assets/7ef730f6-1d69-4c0d-b824-7c6504416ab5)
+
 
 ---
 
