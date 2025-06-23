@@ -56,8 +56,14 @@ td, th {
     background: #e0e0e0;
 }
 .stick span {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100%;
+    font-size: 12px;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
 }
 .stick .kerf {
     background: #fff;
