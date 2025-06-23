@@ -171,7 +171,7 @@ def generate_layout_data(bins, kerf_width: float) -> list:
     caller can render a proportional layout.
     """
     layout_bins = []
-    for b in bins:
+    for b in [b for b in bins if b['parts']]:
         segments = []
         remaining = b['stock_length']
         for i, part in enumerate(b['parts']):
@@ -229,7 +229,8 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str, shape
         "Parts",
     ]]
 
-    for idx, b in enumerate(bins, start=1):
+    used_bins = [b for b in bins if b['parts']]
+    for idx, b in enumerate(used_bins, start=1):
         parts_list = ", ".join(
             f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
         )
@@ -279,7 +280,8 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
             writer.writerow(["Shape", shape])
         writer.writerow([])
         writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"])
-        for idx, b in enumerate(bins, start=1):
+        used_bins = [b for b in bins if b['parts']]
+        for idx, b in enumerate(used_bins, start=1):
             parts_list = ", ".join(
                 f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
             )
@@ -343,6 +345,11 @@ def optimize():
     bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']
+
+    # Remove any stock sticks that ended up unused so they don't clutter
+    # the results tables or diagrams.
+    bins = [b for b in bins if b['parts']]
+
     layout = generate_layout_data(bins, kerf_width)
     pdf_name = f"{uuid.uuid4()}.pdf"
     pdf_path = os.path.join(tempfile.gettempdir(), pdf_name)
