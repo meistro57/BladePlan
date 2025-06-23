@@ -23,6 +23,9 @@
     <input type="file" id="stock_file" name="stock_file" accept=".csv">
     <a href="{{ url_for('static', filename='sample_stock.csv') }}" download>Example</a>
 
+    <label for="shape">Material Shape:</label>
+    <input type="text" id="shape" name="shape" placeholder="e.g. W12x65">
+
     <label for="kerf_width">Kerf Width:</label>
     <input type="text" id="kerf_width" name="kerf_width" placeholder="1/8&quot;">
 

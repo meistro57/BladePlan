@@ -9,6 +9,9 @@
 <body>
 <h1>Optimized Cut Plan</h1>
 <p>Kerf width: {{ format_length(kerf_width) }}</p>
+{% if shape %}
+<p>Shape: {{ shape }}</p>
+{% endif %}
 <table border="1" cellpadding="5" cellspacing="0">
     <tr>
         <th>Stick #</th>
