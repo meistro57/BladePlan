@@ -33,6 +33,9 @@ Lightweight Flask-based interface. No installation mess. Enter your data, hit op
 📦 **CSV-Friendly Format**
 Import your parts and stock lists from CSV files or type them in manually.
 
+🏷️ **Material Shape**
+Optionally specify a shape like `W12x65` to label your reports.
+
 ⚔️ **Wasteless Warrior Mode** *(In development)*
 Kerf width input supported. Trim order visualization and printable cut sheets still in progress.
 
@@ -44,9 +47,15 @@ BladePlan/
 ├── app/
 │   ├── __init__.py
 │   ├── cut_optimizer_app.py
+│   ├── static/
+│   │   ├── sample_parts.csv
+│   │   ├── sample_stock.csv
+│   │   └── style.css
 │   └── templates/
 │       ├── index.html
 │       └── results.html
+├── tests/
+├── forgecore/
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
