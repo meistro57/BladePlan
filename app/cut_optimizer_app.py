@@ -35,7 +35,6 @@ def parse_length(length_str: str) -> float:
         inches = whole + frac
     return feet * 12 + inches
 
-
 def parse_parts(text: str):
     parts = []
     for line in text.splitlines():
@@ -187,7 +186,7 @@ def generate_layout_data(bins, kerf_width: float) -> list:
     return layout_bins
 
 
-def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> None:
+def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
     """Generate a PDF report of the optimized cut plan.
 
     Parameters
@@ -217,8 +216,10 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> No
     elements = [
         Paragraph("Optimized Cut Plan", styles["Heading1"]),
         Paragraph(f"Kerf width: {format_length(kerf_width)}", styles["Normal"]),
-        Spacer(1, 12),
     ]
+    if shape:
+        elements.append(Paragraph(f"Shape: {shape}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
 
     data = [[
         "Stick #",
@@ -269,11 +270,13 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str) -> No
     doc.build(elements)
 
 
-def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str) -> None:
+def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
     """Generate a CSV report of the optimized cut plan."""
     with open(filename, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Kerf width", format_length(kerf_width)])
+        if shape:
+            writer.writerow(["Shape", shape])
         writer.writerow([])
         writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"])
         for idx, b in enumerate(bins, start=1):
@@ -320,6 +323,7 @@ def index():
 def optimize():
     parts_file = request.files.get('parts_file')
     stock_file = request.files.get('stock_file')
+    shape = request.form.get('shape', '')
 
     if parts_file and parts_file.filename:
         parts = parse_parts_csv(parts_file)
@@ -342,16 +346,17 @@ def optimize():
     layout = generate_layout_data(bins, kerf_width)
     pdf_name = f"{uuid.uuid4()}.pdf"
     pdf_path = os.path.join(tempfile.gettempdir(), pdf_name)
-    export_cutting_plan_pdf(bins, uncut, kerf_width, pdf_path)
+    export_cutting_plan_pdf(bins, uncut, kerf_width, pdf_path, shape)
     csv_name = f"{uuid.uuid4()}.csv"
     csv_path = os.path.join(tempfile.gettempdir(), csv_name)
-    export_cutting_plan_csv(bins, uncut, kerf_width, csv_path)
+    export_cutting_plan_csv(bins, uncut, kerf_width, csv_path, shape)
     return render_template(
         'results.html',
         bins=bins,
         uncut=uncut,
         kerf_width=kerf_width,
         layout=layout,
+        shape=shape,
         pdf_filename=pdf_name,
         csv_filename=csv_name,
         format_length=format_length,
