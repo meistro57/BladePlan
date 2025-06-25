@@ -13,13 +13,23 @@ app.jinja_env.globals.update(zip=zip)
 
 
 def parse_length(length_str: str) -> float:
-    """Convert length strings like "11' 9 15/16\"" to inches."""
+    """Convert length strings like ``"11' 9 15/16\""`` to inches.
+
+    Raises
+    ------
+    ValueError
+        If ``length_str`` contains malformed numeric values.
+    """
     length_str = length_str.strip().lower()
+    if not length_str:
+        raise ValueError("Length value is missing")
+
     feet = 0
     feet_match = re.search(r"(\d+)\s*'", length_str)
     if feet_match:
         feet = int(feet_match.group(1))
         length_str = length_str[feet_match.end():]
+
     length_str = length_str.replace('"', '').strip()
     inches = 0.0
     if length_str:
@@ -28,11 +38,18 @@ def parse_length(length_str: str) -> float:
         frac = 0.0
         for p in parts:
             if '/' in p:
-                num, denom = p.split('/')
-                frac += int(num) / int(denom)
+                try:
+                    num, denom = p.split('/')
+                    frac += int(num) / int(denom)
+                except (ValueError, ZeroDivisionError) as exc:
+                    raise ValueError(f"Invalid fraction '{p}' in length '{length_str}'") from exc
             else:
-                whole += float(p)
+                try:
+                    whole += float(p)
+                except ValueError as exc:
+                    raise ValueError(f"Invalid number '{p}' in length '{length_str}'") from exc
         inches = whole + frac
+
     return feet * 12 + inches
 
 def parse_parts(text: str):
@@ -42,10 +59,21 @@ def parse_parts(text: str):
         if not line:
             continue
         tokens = line.split()
-        qty = int(tokens[0])
+        if len(tokens) < 3:
+            raise ValueError(f"Invalid part line: '{line}'")
+
+        qty_str = tokens[0]
+        if not qty_str.isdigit():
+            raise ValueError(f"Invalid quantity '{qty_str}' in line: '{line}'")
+        qty = int(qty_str)
+
         mark = tokens[1]
         length_str = ' '.join(tokens[2:])
-        length = parse_length(length_str)
+        try:
+            length = parse_length(length_str)
+        except ValueError as exc:
+            raise ValueError(f"Invalid length in line '{line}': {exc}") from exc
+
         for _ in range(qty):
             parts.append({'mark': mark, 'length': length, 'length_str': length_str})
     return parts
@@ -58,9 +86,20 @@ def parse_stock(text: str):
         if not line:
             continue
         tokens = line.split()
-        qty = int(tokens[0])
+        if len(tokens) < 2:
+            raise ValueError(f"Invalid stock line: '{line}'")
+
+        qty_str = tokens[0]
+        if not qty_str.isdigit():
+            raise ValueError(f"Invalid quantity '{qty_str}' in line: '{line}'")
+        qty = int(qty_str)
+
         length_str = ' '.join(tokens[1:])
-        length = parse_length(length_str)
+        try:
+            length = parse_length(length_str)
+        except ValueError as exc:
+            raise ValueError(f"Invalid length in line '{line}': {exc}") from exc
+
         for _ in range(qty):
             stocks.append({'length': length, 'length_str': length_str})
     # Sort stock by length descending for FFD
@@ -77,10 +116,20 @@ def parse_parts_csv(file) -> list:
     text = data.decode() if isinstance(data, bytes) else data
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
-        qty = int(row.get('qty', '0'))
+        qty_str = row.get('qty', '').strip()
+        if not qty_str.isdigit():
+            raise ValueError(f"Invalid quantity '{qty_str}' in parts CSV")
+        qty = int(qty_str)
+
         mark = row.get('mark', '').strip()
         length_str = row.get('length', '').strip()
-        length = parse_length(length_str)
+        if not length_str:
+            raise ValueError("Missing length in parts CSV")
+        try:
+            length = parse_length(length_str)
+        except ValueError as exc:
+            raise ValueError(f"Invalid length '{length_str}' in parts CSV: {exc}") from exc
+
         for _ in range(qty):
             parts.append({'mark': mark, 'length': length, 'length_str': length_str})
     return parts
@@ -95,9 +144,19 @@ def parse_stock_csv(file) -> list:
     text = data.decode() if isinstance(data, bytes) else data
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
-        qty = int(row.get('qty', '0'))
+        qty_str = row.get('qty', '').strip()
+        if not qty_str.isdigit():
+            raise ValueError(f"Invalid quantity '{qty_str}' in stock CSV")
+        qty = int(qty_str)
+
         length_str = row.get('length', '').strip()
-        length = parse_length(length_str)
+        if not length_str:
+            raise ValueError("Missing length in stock CSV")
+        try:
+            length = parse_length(length_str)
+        except ValueError as exc:
+            raise ValueError(f"Invalid length '{length_str}' in stock CSV: {exc}") from exc
+
         for _ in range(qty):
             stocks.append({'length': length, 'length_str': length_str})
     stocks.sort(key=lambda x: -x['length'])
@@ -326,21 +385,33 @@ def optimize():
     parts_file = request.files.get('parts_file')
     stock_file = request.files.get('stock_file')
     shape = request.form.get('shape', '')
+    error = None
 
-    if parts_file and parts_file.filename:
-        parts = parse_parts_csv(parts_file)
-    else:
-        parts_input = request.form.get('parts', '')
-        parts = parse_parts(parts_input)
+    try:
+        if parts_file and parts_file.filename:
+            parts = parse_parts_csv(parts_file)
+        else:
+            parts_input = request.form.get('parts', '')
+            parts = parse_parts(parts_input)
 
-    if stock_file and stock_file.filename:
-        stocks = parse_stock_csv(stock_file)
-    else:
-        stock_input = request.form.get('stock', '')
-        stocks = parse_stock(stock_input)
+        if stock_file and stock_file.filename:
+            stocks = parse_stock_csv(stock_file)
+        else:
+            stock_input = request.form.get('stock', '')
+            stocks = parse_stock(stock_input)
 
-    kerf_str = request.form.get('kerf_width', '0')
-    kerf_width = parse_length(kerf_str) if kerf_str.strip() else 0.0
+        kerf_str = request.form.get('kerf_width', '0')
+        kerf_width = parse_length(kerf_str) if kerf_str.strip() else 0.0
+    except ValueError as exc:
+        error = str(exc)
+        return render_template(
+            'index.html',
+            error=error,
+            parts=request.form.get('parts', ''),
+            stock=request.form.get('stock', ''),
+            shape=shape,
+            kerf_width=request.form.get('kerf_width', '0'),
+        ), 400
 
     bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:

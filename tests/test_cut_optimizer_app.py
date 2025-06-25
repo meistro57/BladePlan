@@ -148,6 +148,23 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(resp.mimetype, 'text/csv')
         os.remove(path)
 
+    def test_invalid_parts_input(self):
+        with self.assertRaises(ValueError):
+            parse_parts("bad line")
+
+    def test_invalid_stock_input(self):
+        with self.assertRaises(ValueError):
+            parse_stock("x y")
+
+    def test_optimize_route_invalid_input(self):
+        client = app.test_client()
+        resp = client.post(
+            "/optimize",
+            data={"parts": "bad", "stock": "1 10'"},
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(b"Invalid", resp.data)
+
 
 if __name__ == '__main__':
     unittest.main()

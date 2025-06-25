@@ -8,26 +8,29 @@
 </head>
 <body>
 <h1>BladePlan Cut Optimizer</h1>
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
 <form action="/optimize" method="post" enctype="multipart/form-data">
     <label for="parts">Parts List:</label>
-    <textarea id="parts" name="parts" rows="8" placeholder="1 CA195 14' 3 1/4&quot;&#10;2 CA114 11' 9 15/16&quot;"></textarea>
+    <textarea id="parts" name="parts" rows="8" placeholder="1 CA195 14' 3 1/4&quot;&#10;2 CA114 11' 9 15/16&quot;">{{ parts|default('') }}</textarea>
 
     <label for="parts_file">or Import Parts CSV:</label>
     <input type="file" id="parts_file" name="parts_file" accept=".csv">
     <a href="{{ url_for('static', filename='sample_parts.csv') }}" download>Example</a>
 
     <label for="stock">Stock List:</label>
-    <textarea id="stock" name="stock" rows="6" placeholder="5 48'&#10;2 40'&#10;2 24'"></textarea>
+    <textarea id="stock" name="stock" rows="6" placeholder="5 48'&#10;2 40'&#10;2 24'">{{ stock|default('') }}</textarea>
 
     <label for="stock_file">or Import Stock CSV:</label>
     <input type="file" id="stock_file" name="stock_file" accept=".csv">
     <a href="{{ url_for('static', filename='sample_stock.csv') }}" download>Example</a>
 
     <label for="shape">Material Shape:</label>
-    <input type="text" id="shape" name="shape" placeholder="e.g. W12x65">
+    <input type="text" id="shape" name="shape" placeholder="e.g. W12x65" value="{{ shape|default('') }}">
 
     <label for="kerf_width">Kerf Width:</label>
-    <input type="text" id="kerf_width" name="kerf_width" placeholder="1/8&quot;">
+    <input type="text" id="kerf_width" name="kerf_width" placeholder="1/8&quot;" value="{{ kerf_width|default('') }}">
 
     <button type="submit">Optimize</button>
 </form>
