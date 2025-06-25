@@ -43,6 +43,20 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(len(parts), 1)
         self.assertEqual(len(stock), 1)
 
+    def test_parse_csv_negative_values(self):
+        bad_parts = io.StringIO('qty,mark,length\n0,A,5\'\n')
+        with self.assertRaises(ValueError):
+            parse_parts_csv(bad_parts)
+        bad_parts_len = io.StringIO('qty,mark,length\n1,A,-5\n')
+        with self.assertRaises(ValueError):
+            parse_parts_csv(bad_parts_len)
+        bad_stock = io.StringIO('qty,length\n0,10\'\n')
+        with self.assertRaises(ValueError):
+            parse_stock_csv(bad_stock)
+        bad_stock_len = io.StringIO('qty,length\n1,-10\n')
+        with self.assertRaises(ValueError):
+            parse_stock_csv(bad_stock_len)
+
     def test_optimize_cuts(self):
         parts = [
             {'mark': 'A', 'length': 60, 'length_str': "5'"},
@@ -155,6 +169,16 @@ class TestCutOptimizer(unittest.TestCase):
     def test_invalid_stock_input(self):
         with self.assertRaises(ValueError):
             parse_stock("x y")
+
+    def test_negative_values(self):
+        with self.assertRaises(ValueError):
+            parse_parts("0 A 5'")
+        with self.assertRaises(ValueError):
+            parse_parts("1 A -5")
+        with self.assertRaises(ValueError):
+            parse_stock("0 10'")
+        with self.assertRaises(ValueError):
+            parse_stock("1 -10")
 
     def test_optimize_route_invalid_input(self):
         client = app.test_client()

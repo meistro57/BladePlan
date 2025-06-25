@@ -63,7 +63,7 @@ def parse_parts(text: str):
             raise ValueError(f"Invalid part line: '{line}'")
 
         qty_str = tokens[0]
-        if not qty_str.isdigit():
+        if not qty_str.isdigit() or int(qty_str) <= 0:
             raise ValueError(f"Invalid quantity '{qty_str}' in line: '{line}'")
         qty = int(qty_str)
 
@@ -71,6 +71,8 @@ def parse_parts(text: str):
         length_str = ' '.join(tokens[2:])
         try:
             length = parse_length(length_str)
+            if length <= 0:
+                raise ValueError("length must be positive")
         except ValueError as exc:
             raise ValueError(f"Invalid length in line '{line}': {exc}") from exc
 
@@ -90,13 +92,15 @@ def parse_stock(text: str):
             raise ValueError(f"Invalid stock line: '{line}'")
 
         qty_str = tokens[0]
-        if not qty_str.isdigit():
+        if not qty_str.isdigit() or int(qty_str) <= 0:
             raise ValueError(f"Invalid quantity '{qty_str}' in line: '{line}'")
         qty = int(qty_str)
 
         length_str = ' '.join(tokens[1:])
         try:
             length = parse_length(length_str)
+            if length <= 0:
+                raise ValueError("length must be positive")
         except ValueError as exc:
             raise ValueError(f"Invalid length in line '{line}': {exc}") from exc
 
@@ -117,7 +121,7 @@ def parse_parts_csv(file) -> list:
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         qty_str = row.get('qty', '').strip()
-        if not qty_str.isdigit():
+        if not qty_str.isdigit() or int(qty_str) <= 0:
             raise ValueError(f"Invalid quantity '{qty_str}' in parts CSV")
         qty = int(qty_str)
 
@@ -127,6 +131,8 @@ def parse_parts_csv(file) -> list:
             raise ValueError("Missing length in parts CSV")
         try:
             length = parse_length(length_str)
+            if length <= 0:
+                raise ValueError("length must be positive")
         except ValueError as exc:
             raise ValueError(f"Invalid length '{length_str}' in parts CSV: {exc}") from exc
 
@@ -145,7 +151,7 @@ def parse_stock_csv(file) -> list:
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         qty_str = row.get('qty', '').strip()
-        if not qty_str.isdigit():
+        if not qty_str.isdigit() or int(qty_str) <= 0:
             raise ValueError(f"Invalid quantity '{qty_str}' in stock CSV")
         qty = int(qty_str)
 
@@ -154,6 +160,8 @@ def parse_stock_csv(file) -> list:
             raise ValueError("Missing length in stock CSV")
         try:
             length = parse_length(length_str)
+            if length <= 0:
+                raise ValueError("length must be positive")
         except ValueError as exc:
             raise ValueError(f"Invalid length '{length_str}' in stock CSV: {exc}") from exc
 
