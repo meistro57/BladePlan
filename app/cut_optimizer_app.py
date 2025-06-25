@@ -442,4 +442,34 @@ def optimize():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import argparse
+
+    def check_env_vars():
+        required = [
+            'FORGECORE_DB_HOST',
+            'FORGECORE_DB_USER',
+            'FORGECORE_DB_PASSWORD',
+            'FORGECORE_DB_NAME',
+        ]
+        missing = [v for v in required if not os.getenv(v)]
+        if missing:
+            raise RuntimeError(
+                f"Missing required environment variables: {', '.join(missing)}"
+            )
+
+    parser = argparse.ArgumentParser(description='Run the BladePlan Flask app')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--dev', action='store_true', help='Run in development mode')
+    group.add_argument('--prod', action='store_true', help='Run in production mode')
+    args = parser.parse_args()
+
+    check_env_vars()
+
+    if args.dev:
+        os.environ['FLASK_ENV'] = 'development'
+        debug = True
+    else:
+        os.environ['FLASK_ENV'] = 'production'
+        debug = False
+
+    app.run(debug=debug)
