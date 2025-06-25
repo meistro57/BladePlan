@@ -79,13 +79,16 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 ### 3. Install Flask
 ```bash
-pip install -r requirements.txt
+pip install --upgrade -r requirements.txt
 ```
 
 ### 4. Run the App
 ```bash
-python app/cut_optimizer_app.py
+python app/cut_optimizer_app.py [--dev|--prod]
 ```
+
+Ensure the following environment variables are set before running:
+`FORGECORE_DB_HOST`, `FORGECORE_DB_USER`, `FORGECORE_DB_PASSWORD`, and `FORGECORE_DB_NAME`.
 
 Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser 🧠💥
 
