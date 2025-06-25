@@ -89,6 +89,14 @@ python app/cut_optimizer_app.py
 
 Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser 🧠💥
 
+### Running Tests
+Install the requirements above and run:
+```bash
+pytest -q
+```
+All test cases should pass, including edge cases for empty/malformed lengths,
+massive stock lists, and oversized kerf widths.
+
 ---
 
 ## 🧪 Example Input

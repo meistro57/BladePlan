@@ -26,6 +26,12 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertAlmostEqual(parse_length("10'"), 120.0)
         self.assertAlmostEqual(parse_length("18 3/8"), 18.375)
 
+    def test_parse_length_empty_and_malformed(self):
+        """Empty strings return 0 while malformed values raise ValueError."""
+        self.assertEqual(parse_length(""), 0.0)
+        with self.assertRaises(ValueError):
+            parse_length("bad value")
+
     def test_parse_parts_and_stock(self):
         parts_text = """1 CA195 7'
 2 CA100 3' 6"""
@@ -62,6 +68,15 @@ class TestCutOptimizer(unittest.TestCase):
         stock = [{'length': 100, 'length_str': "100"}]
         bins, uncut = optimize_cuts(parts, stock, kerf_width=0.125)
         self.assertEqual(len(uncut), 1)
+
+    def test_extremely_long_stock_list(self):
+        """Thousands of stock entries are handled without issue."""
+        parts = [{'mark': 'A', 'length': 50, 'length_str': '50'}]
+        stock_text = "\n".join(["1 60"] * 1000)
+        stock = parse_stock(stock_text)
+        self.assertEqual(len(stock), 1000)
+        bins, uncut = optimize_cuts(parts, stock)
+        self.assertEqual(len(uncut), 0)
 
     def test_export_cutting_plan_pdf(self):
         bins = [
@@ -147,6 +162,17 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, 'text/csv')
         os.remove(path)
+
+    def test_large_kerf_prevents_extra_cuts(self):
+        """Kerf width larger than stock leaves parts uncut."""
+        parts = [
+            {'mark': 'A', 'length': 40, 'length_str': '40'},
+            {'mark': 'B', 'length': 40, 'length_str': '40'},
+        ]
+        stock = [{'length': 70, 'length_str': '70'}]
+        bins, uncut = optimize_cuts(parts, stock, kerf_width=100)
+        self.assertEqual(len(uncut), 1)
+        self.assertEqual(len([b for b in bins if b['parts']]), 1)
 
 
 if __name__ == '__main__':
