@@ -19,21 +19,22 @@ def parse_length(length_str: str) -> float:
     feet_match = re.search(r"(\d+)\s*'", length_str)
     if feet_match:
         feet = int(feet_match.group(1))
-        length_str = length_str[feet_match.end():]
-    length_str = length_str.replace('"', '').strip()
+        length_str = length_str[feet_match.end() :]
+    length_str = length_str.replace('"', "").strip()
     inches = 0.0
     if length_str:
         parts = length_str.split()
         whole = 0
         frac = 0.0
         for p in parts:
-            if '/' in p:
-                num, denom = p.split('/')
+            if "/" in p:
+                num, denom = p.split("/")
                 frac += int(num) / int(denom)
             else:
                 whole += float(p)
         inches = whole + frac
     return feet * 12 + inches
+
 
 def parse_parts(text: str):
     parts = []
@@ -44,10 +45,10 @@ def parse_parts(text: str):
         tokens = line.split()
         qty = int(tokens[0])
         mark = tokens[1]
-        length_str = ' '.join(tokens[2:])
+        length_str = " ".join(tokens[2:])
         length = parse_length(length_str)
         for _ in range(qty):
-            parts.append({'mark': mark, 'length': length, 'length_str': length_str})
+            parts.append({"mark": mark, "length": length, "length_str": length_str})
     return parts
 
 
@@ -59,12 +60,12 @@ def parse_stock(text: str):
             continue
         tokens = line.split()
         qty = int(tokens[0])
-        length_str = ' '.join(tokens[1:])
+        length_str = " ".join(tokens[1:])
         length = parse_length(length_str)
         for _ in range(qty):
-            stocks.append({'length': length, 'length_str': length_str})
+            stocks.append({"length": length, "length_str": length_str})
     # Sort stock by length descending for FFD
-    stocks.sort(key=lambda x: -x['length'])
+    stocks.sort(key=lambda x: -x["length"])
     return stocks
 
 
@@ -77,12 +78,12 @@ def parse_parts_csv(file) -> list:
     text = data.decode() if isinstance(data, bytes) else data
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
-        qty = int(row.get('qty', '0'))
-        mark = row.get('mark', '').strip()
-        length_str = row.get('length', '').strip()
+        qty = int(row.get("qty", "0"))
+        mark = row.get("mark", "").strip()
+        length_str = row.get("length", "").strip()
         length = parse_length(length_str)
         for _ in range(qty):
-            parts.append({'mark': mark, 'length': length, 'length_str': length_str})
+            parts.append({"mark": mark, "length": length, "length_str": length_str})
     return parts
 
 
@@ -95,35 +96,37 @@ def parse_stock_csv(file) -> list:
     text = data.decode() if isinstance(data, bytes) else data
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
-        qty = int(row.get('qty', '0'))
-        length_str = row.get('length', '').strip()
+        qty = int(row.get("qty", "0"))
+        length_str = row.get("length", "").strip()
         length = parse_length(length_str)
         for _ in range(qty):
-            stocks.append({'length': length, 'length_str': length_str})
-    stocks.sort(key=lambda x: -x['length'])
+            stocks.append({"length": length, "length_str": length_str})
+    stocks.sort(key=lambda x: -x["length"])
     return stocks
 
 
 def optimize_cuts(parts, stocks, kerf_width: float = 0.0):
     bins = []
     for stock in stocks:
-        bins.append({
-            'stock_length': stock['length'],
-            'stock_str': stock['length_str'],
-            'remaining': stock['length'],
-            'parts': []
-        })
-    parts_sorted = sorted(parts, key=lambda p: -p['length'])
+        bins.append(
+            {
+                "stock_length": stock["length"],
+                "stock_str": stock["length_str"],
+                "remaining": stock["length"],
+                "parts": [],
+            }
+        )
+    parts_sorted = sorted(parts, key=lambda p: -p["length"])
     uncut = []
     for part in parts_sorted:
         placed = False
         for b in bins:
-            required = part['length']
-            if b['parts']:
+            required = part["length"]
+            if b["parts"]:
                 required += kerf_width
-            if required <= b['remaining']:
-                b['parts'].append(part)
-                b['remaining'] -= required
+            if required <= b["remaining"]:
+                b["parts"].append(part)
+                b["remaining"] -= required
                 placed = True
                 break
         if not placed:
@@ -146,11 +149,12 @@ def format_length(inches: float) -> str:
     if feet:
         parts.append(f"{feet}'")
 
-    inch_part = ''
+    inch_part = ""
     if whole or num:
-        inch_part = f"{whole}" if whole else '0'
+        inch_part = f"{whole}" if whole else "0"
         if num:
             from math import gcd
+
             g = gcd(num, denom)
             simple_num = num // g
             simple_denom = denom // g
@@ -160,7 +164,7 @@ def format_length(inches: float) -> str:
     if inch_part:
         parts.append(inch_part)
 
-    return ' '.join(parts) if parts else '0"'
+    return " ".join(parts) if parts else '0"'
 
 
 def generate_layout_data(bins, kerf_width: float) -> list:
@@ -171,22 +175,37 @@ def generate_layout_data(bins, kerf_width: float) -> list:
     caller can render a proportional layout.
     """
     layout_bins = []
-    for b in [b for b in bins if b['parts']]:
+    for b in [b for b in bins if b["parts"]]:
         segments = []
-        remaining = b['stock_length']
-        for i, part in enumerate(b['parts']):
-            segments.append({'label': part['mark'], 'length': part['length']})
-            remaining -= part['length']
-            if kerf_width and i < len(b['parts']) - 1:
-                segments.append({'label': 'Kerf', 'length': kerf_width})
+        remaining = b["stock_length"]
+        for i, part in enumerate(b["parts"]):
+            segments.append(
+                {
+                    "label": part["mark"],
+                    "length": part["length"],
+                    "type": "part",
+                    "mark": part["mark"],
+                }
+            )
+            remaining -= part["length"]
+            if kerf_width and i < len(b["parts"]) - 1:
+                segments.append(
+                    {
+                        "label": "Kerf",
+                        "length": kerf_width,
+                        "type": "kerf",
+                    }
+                )
                 remaining -= kerf_width
         if remaining > 0:
-            segments.append({'label': 'Scrap', 'length': remaining})
+            segments.append({"label": "Scrap", "length": remaining, "type": "scrap"})
         layout_bins.append(segments)
     return layout_bins
 
 
-def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
+def export_cutting_plan_pdf(
+    bins, uncut, kerf_width: float, filename: str, shape: str = ""
+) -> None:
     """Generate a PDF report of the optimized cut plan.
 
     Parameters
@@ -221,15 +240,17 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str, shape
         elements.append(Paragraph(f"Shape: {shape}", styles["Normal"]))
     elements.append(Spacer(1, 12))
 
-    data = [[
-        "Stick #",
-        "Stock Length",
-        "Total Used",
-        "Remaining Scrap",
-        "Parts",
-    ]]
+    data = [
+        [
+            "Stick #",
+            "Stock Length",
+            "Total Used",
+            "Remaining Scrap",
+            "Parts",
+        ]
+    ]
 
-    used_bins = [b for b in bins if b['parts']]
+    used_bins = [b for b in bins if b["parts"]]
     for idx, b in enumerate(used_bins, start=1):
         parts_list = ", ".join(
             f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
@@ -271,7 +292,9 @@ def export_cutting_plan_pdf(bins, uncut, kerf_width: float, filename: str, shape
     doc.build(elements)
 
 
-def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
+def export_cutting_plan_csv(
+    bins, uncut, kerf_width: float, filename: str, shape: str = ""
+) -> None:
     """Generate a CSV report of the optimized cut plan."""
     with open(filename, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
@@ -279,8 +302,10 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
         if shape:
             writer.writerow(["Shape", shape])
         writer.writerow([])
-        writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"])
-        used_bins = [b for b in bins if b['parts']]
+        writer.writerow(
+            ["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"]
+        )
+        used_bins = [b for b in bins if b["parts"]]
         for idx, b in enumerate(used_bins, start=1):
             parts_list = ", ".join(
                 f"{p['mark']} - {format_length(p['length'])}" for p in b["parts"]
@@ -302,53 +327,53 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
                 writer.writerow([p["mark"], format_length(p["length"])])
 
 
-@app.route('/download_pdf/<filename>', methods=['GET'])
+@app.route("/download_pdf/<filename>", methods=["GET"])
 def download_pdf(filename: str):
     """Serve the generated PDF file as a download."""
     pdf_path = os.path.join(tempfile.gettempdir(), filename)
-    return send_file(pdf_path, as_attachment=True, download_name='cut_plan.pdf')
+    return send_file(pdf_path, as_attachment=True, download_name="cut_plan.pdf")
 
 
-@app.route('/download_csv/<filename>', methods=['GET'])
+@app.route("/download_csv/<filename>", methods=["GET"])
 def download_csv(filename: str):
     """Serve the generated CSV file as a download."""
     csv_path = os.path.join(tempfile.gettempdir(), filename)
-    return send_file(csv_path, as_attachment=True, download_name='cut_plan.csv')
+    return send_file(csv_path, as_attachment=True, download_name="cut_plan.csv")
 
 
-@app.route('/', methods=['GET'])
+@app.route("/", methods=["GET"])
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/optimize', methods=['POST'])
+@app.route("/optimize", methods=["POST"])
 def optimize():
-    parts_file = request.files.get('parts_file')
-    stock_file = request.files.get('stock_file')
-    shape = request.form.get('shape', '')
+    parts_file = request.files.get("parts_file")
+    stock_file = request.files.get("stock_file")
+    shape = request.form.get("shape", "")
 
     if parts_file and parts_file.filename:
         parts = parse_parts_csv(parts_file)
     else:
-        parts_input = request.form.get('parts', '')
+        parts_input = request.form.get("parts", "")
         parts = parse_parts(parts_input)
 
     if stock_file and stock_file.filename:
         stocks = parse_stock_csv(stock_file)
     else:
-        stock_input = request.form.get('stock', '')
+        stock_input = request.form.get("stock", "")
         stocks = parse_stock(stock_input)
 
-    kerf_str = request.form.get('kerf_width', '0')
+    kerf_str = request.form.get("kerf_width", "0")
     kerf_width = parse_length(kerf_str) if kerf_str.strip() else 0.0
 
     bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:
-        b['used'] = b['stock_length'] - b['remaining']
+        b["used"] = b["stock_length"] - b["remaining"]
 
     # Remove any stock sticks that ended up unused so they don't clutter
     # the results tables or diagrams.
-    bins = [b for b in bins if b['parts']]
+    bins = [b for b in bins if b["parts"]]
 
     layout = generate_layout_data(bins, kerf_width)
     pdf_name = f"{uuid.uuid4()}.pdf"
@@ -358,7 +383,7 @@ def optimize():
     csv_path = os.path.join(tempfile.gettempdir(), csv_name)
     export_cutting_plan_csv(bins, uncut, kerf_width, csv_path, shape)
     return render_template(
-        'results.html',
+        "results.html",
         bins=bins,
         uncut=uncut,
         kerf_width=kerf_width,
@@ -370,5 +395,5 @@ def optimize():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
