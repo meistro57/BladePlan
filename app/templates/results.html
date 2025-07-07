@@ -37,6 +37,13 @@
     {% endfor %}
 </table>
 
+<h2>Totals</h2>
+<ul>
+    <li>Total Stock: {{ format_length(total_stock) }}</li>
+    <li>Total Used: {{ format_length(total_used) }}</li>
+    <li>Total Scrap: {{ format_length(total_scrap) }}</li>
+</ul>
+
 <h2>Layout</h2>
 {% for b, segments in zip(bins, layout) %}
 <div class="stick">
@@ -57,6 +64,8 @@
     <a href="{{ url_for('download_pdf', filename=pdf_filename) }}">Download PDF</a>
     |
     <a href="{{ url_for('download_csv', filename=csv_filename) }}">Download CSV</a>
+    |
+    <a href="{{ url_for('download_json', filename=json_filename) }}">Download JSON</a>
 </p>
 <a href="/">Back</a>
 </body>

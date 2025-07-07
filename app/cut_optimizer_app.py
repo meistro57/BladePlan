@@ -369,6 +369,35 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
                 writer.writerow([p["mark"], format_length(p["length"])])
 
 
+def export_cutting_plan_json(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
+    """Generate a JSON report of the optimized cut plan."""
+    import json
+    data = {
+        "kerf_width": format_length(kerf_width),
+        "shape": shape,
+        "sticks": [],
+        "uncut": [
+            {"mark": p["mark"], "length": format_length(p["length"])} for p in uncut
+        ],
+    }
+    used_bins = [b for b in bins if b['parts']]
+    for idx, b in enumerate(used_bins, start=1):
+        parts_list = [
+            {"mark": p["mark"], "length": format_length(p["length"])} for p in b["parts"]
+        ]
+        data["sticks"].append(
+            {
+                "stick": idx,
+                "stock_length": format_length(b["stock_length"]),
+                "used": format_length(b["used"]),
+                "remaining": format_length(b["remaining"]),
+                "parts": parts_list,
+            }
+        )
+    with open(filename, "w") as fh:
+        json.dump(data, fh, indent=2)
+
+
 @app.route('/download_pdf/<filename>', methods=['GET'])
 def download_pdf(filename: str):
     """Serve the generated PDF file as a download."""
@@ -381,6 +410,13 @@ def download_csv(filename: str):
     """Serve the generated CSV file as a download."""
     csv_path = os.path.join(tempfile.gettempdir(), filename)
     return send_file(csv_path, as_attachment=True, download_name='cut_plan.csv')
+
+
+@app.route('/download_json/<filename>', methods=['GET'])
+def download_json(filename: str):
+    """Serve the generated JSON file as a download."""
+    json_path = os.path.join(tempfile.gettempdir(), filename)
+    return send_file(json_path, as_attachment=True, download_name='cut_plan.json')
 
 
 @app.route('/', methods=['GET'])
@@ -429,6 +465,10 @@ def optimize():
     # the results tables or diagrams.
     bins = [b for b in bins if b['parts']]
 
+    total_stock = sum(b['stock_length'] for b in bins)
+    total_used = sum(b['used'] for b in bins)
+    total_scrap = sum(b['remaining'] for b in bins)
+
     layout = generate_layout_data(bins, kerf_width)
     pdf_name = f"{uuid.uuid4()}.pdf"
     pdf_path = os.path.join(tempfile.gettempdir(), pdf_name)
@@ -436,6 +476,9 @@ def optimize():
     csv_name = f"{uuid.uuid4()}.csv"
     csv_path = os.path.join(tempfile.gettempdir(), csv_name)
     export_cutting_plan_csv(bins, uncut, kerf_width, csv_path, shape)
+    json_name = f"{uuid.uuid4()}.json"
+    json_path = os.path.join(tempfile.gettempdir(), json_name)
+    export_cutting_plan_json(bins, uncut, kerf_width, json_path, shape)
     return render_template(
         'results.html',
         bins=bins,
@@ -445,6 +488,10 @@ def optimize():
         shape=shape,
         pdf_filename=pdf_name,
         csv_filename=csv_name,
+        json_filename=json_name,
+        total_stock=total_stock,
+        total_used=total_used,
+        total_scrap=total_scrap,
         format_length=format_length,
     )
 
