@@ -15,6 +15,7 @@ from app.cut_optimizer_app import (
     optimize_cuts,
     export_cutting_plan_pdf,
     export_cutting_plan_csv,
+    export_cutting_plan_json,
     generate_layout_data,
     app,
 )
@@ -160,6 +161,24 @@ class TestCutOptimizer(unittest.TestCase):
         resp = client.get(f'/download_csv/{os.path.basename(path)}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, 'text/csv')
+        os.remove(path)
+
+    def test_download_json_route(self):
+        client = app.test_client()
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        path = os.path.join(tempfile.gettempdir(), 'route_test.json')
+        export_cutting_plan_json(bins, uncut, 0.0, path)
+        resp = client.get(f'/download_json/{os.path.basename(path)}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.mimetype, 'application/json')
         os.remove(path)
 
     def test_invalid_parts_input(self):

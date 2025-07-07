@@ -24,6 +24,12 @@ Get a complete breakdown of which parts are cut from which sticks, how much mate
 📄 **CSV Cut Plan Export**
 Download the optimized plan as a CSV file for use in spreadsheets or other tools.
 
+📑 **JSON Cut Plan Export**
+Grab the results in JSON format for programmatic use.
+
+📊 **Material Totals**
+See total stock length, used material, and scrap summarized in the results page.
+
 📐 **Stick Layout Diagram**
 Visual diagram showing where each part fits on a stock stick right in the results page.
 
