@@ -24,6 +24,16 @@ def parse_length(length_str: str) -> float:
     if not length_str:
         raise ValueError("Length value is missing")
 
+    metric = re.fullmatch(r"([0-9]*\.?[0-9]+)\s*(mm|cm|m)", length_str)
+    if metric:
+        val = float(metric.group(1))
+        unit = metric.group(2)
+        if unit == "mm":
+            return val / 25.4
+        if unit == "cm":
+            return (val * 10) / 25.4
+        return (val * 1000) / 25.4
+
     feet = 0
     feet_match = re.search(r"(\d+)\s*'", length_str)
     if feet_match:
@@ -50,7 +60,16 @@ def parse_length(length_str: str) -> float:
                     raise ValueError(f"Invalid number '{p}' in length '{length_str}'") from exc
         inches = whole + frac
 
+
     return feet * 12 + inches
+
+
+DEFAULT_KERF = 0.0
+if 'DEFAULT_KERF' in os.environ:
+    try:
+        DEFAULT_KERF = parse_length(os.environ['DEFAULT_KERF'])
+    except ValueError:
+        DEFAULT_KERF = 0.0
 
 def parse_parts(text: str):
     parts = []
@@ -346,7 +365,7 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
         if shape:
             writer.writerow(["Shape", shape])
         writer.writerow([])
-        writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Parts"])
+        writer.writerow(["Stick #", "Stock Length", "Total Used", "Remaining Scrap", "Scrap %", "Parts"])
         used_bins = [b for b in bins if b['parts']]
         for idx, b in enumerate(used_bins, start=1):
             parts_list = ", ".join(
@@ -358,6 +377,7 @@ def export_cutting_plan_csv(bins, uncut, kerf_width: float, filename: str, shape
                     format_length(b["stock_length"]),
                     format_length(b["used"]),
                     format_length(b["remaining"]),
+                    f"{b.get('scrap_pct', 0.0):.1f}%",
                     parts_list,
                 ]
             )
@@ -391,11 +411,34 @@ def export_cutting_plan_json(bins, uncut, kerf_width: float, filename: str, shap
                 "stock_length": format_length(b["stock_length"]),
                 "used": format_length(b["used"]),
                 "remaining": format_length(b["remaining"]),
+                "scrap_pct": round(b.get("scrap_pct", 0.0), 1),
                 "parts": parts_list,
             }
         )
+    total_stock = sum(b["stock_length"] for b in used_bins)
+    total_scrap = sum(b["remaining"] for b in used_bins)
+    data["total_scrap_pct"] = round((total_scrap / total_stock) * 100, 1) if total_stock else 0.0
     with open(filename, "w") as fh:
         json.dump(data, fh, indent=2)
+
+
+def export_cutting_plan_text(bins, uncut, kerf_width: float, filename: str, shape: str = "") -> None:
+    """Generate a plain text report of the optimized cut plan."""
+    with open(filename, "w") as fh:
+        fh.write(f"Kerf width: {format_length(kerf_width)}\n")
+        if shape:
+            fh.write(f"Shape: {shape}\n")
+        used_bins = [b for b in bins if b['parts']]
+        for idx, b in enumerate(used_bins, start=1):
+            fh.write(
+                f"Stick {idx}: {format_length(b['stock_length'])} used {format_length(b['used'])} remaining {format_length(b['remaining'])} ({b.get('scrap_pct', 0.0):.1f}% scrap)\n"
+            )
+            for p in b['parts']:
+                fh.write(f"  - {p['mark']} {format_length(p['length'])}\n")
+        if uncut:
+            fh.write("Uncut Parts:\n")
+            for p in uncut:
+                fh.write(f"  - {p['mark']} {format_length(p['length'])}\n")
 
 
 @app.route('/download_pdf/<filename>', methods=['GET'])
@@ -419,9 +462,16 @@ def download_json(filename: str):
     return send_file(json_path, as_attachment=True, download_name='cut_plan.json')
 
 
+@app.route('/download_txt/<filename>', methods=['GET'])
+def download_txt(filename: str):
+    """Serve the generated text file as a download."""
+    txt_path = os.path.join(tempfile.gettempdir(), filename)
+    return send_file(txt_path, as_attachment=True, download_name='cut_plan.txt')
+
+
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return render_template('index.html', kerf_width=format_length(DEFAULT_KERF))
 
 
 @app.route('/optimize', methods=['POST'])
@@ -444,8 +494,11 @@ def optimize():
             stock_input = request.form.get('stock', '')
             stocks = parse_stock(stock_input)
 
-        kerf_str = request.form.get('kerf_width', '0')
-        kerf_width = parse_length(kerf_str) if kerf_str.strip() else 0.0
+        kerf_str = request.form.get('kerf_width', '')
+        if kerf_str.strip():
+            kerf_width = parse_length(kerf_str)
+        else:
+            kerf_width = DEFAULT_KERF
     except ValueError as exc:
         error = str(exc)
         return render_template(
@@ -460,6 +513,9 @@ def optimize():
     bins, uncut = optimize_cuts(parts, stocks, kerf_width)
     for b in bins:
         b['used'] = b['stock_length'] - b['remaining']
+        b['scrap_pct'] = (
+            (b['remaining'] / b['stock_length']) * 100 if b['stock_length'] else 0.0
+        )
 
     # Remove any stock sticks that ended up unused so they don't clutter
     # the results tables or diagrams.
@@ -468,6 +524,7 @@ def optimize():
     total_stock = sum(b['stock_length'] for b in bins)
     total_used = sum(b['used'] for b in bins)
     total_scrap = sum(b['remaining'] for b in bins)
+    total_scrap_pct = (total_scrap / total_stock) * 100 if total_stock else 0.0
 
     layout = generate_layout_data(bins, kerf_width)
     pdf_name = f"{uuid.uuid4()}.pdf"
@@ -479,6 +536,9 @@ def optimize():
     json_name = f"{uuid.uuid4()}.json"
     json_path = os.path.join(tempfile.gettempdir(), json_name)
     export_cutting_plan_json(bins, uncut, kerf_width, json_path, shape)
+    txt_name = f"{uuid.uuid4()}.txt"
+    txt_path = os.path.join(tempfile.gettempdir(), txt_name)
+    export_cutting_plan_text(bins, uncut, kerf_width, txt_path, shape)
     return render_template(
         'results.html',
         bins=bins,
@@ -489,9 +549,11 @@ def optimize():
         pdf_filename=pdf_name,
         csv_filename=csv_name,
         json_filename=json_name,
+        txt_filename=txt_name,
         total_stock=total_stock,
         total_used=total_used,
         total_scrap=total_scrap,
+        total_scrap_pct=total_scrap_pct,
         format_length=format_length,
     )
 

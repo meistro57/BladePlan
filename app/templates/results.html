@@ -18,6 +18,7 @@
         <th>Stock Length</th>
         <th>Total Used</th>
         <th>Remaining Scrap</th>
+        <th>Scrap %</th>
         <th>Parts</th>
     </tr>
     {% for b in bins %}
@@ -26,6 +27,7 @@
         <td>{{ format_length(b.stock_length) }}</td>
         <td>{{ format_length(b.used) }}</td>
         <td>{{ format_length(b.remaining) }}</td>
+        <td>{{ '%.1f'|format(b.scrap_pct) }}%</td>
         <td>
             <ul>
             {% for p in b.parts %}
@@ -41,7 +43,7 @@
 <ul>
     <li>Total Stock: {{ format_length(total_stock) }}</li>
     <li>Total Used: {{ format_length(total_used) }}</li>
-    <li>Total Scrap: {{ format_length(total_scrap) }}</li>
+    <li>Total Scrap: {{ format_length(total_scrap) }} ({{ '%.1f'|format(total_scrap_pct) }}%)</li>
 </ul>
 
 <h2>Layout</h2>
@@ -66,6 +68,8 @@
     <a href="{{ url_for('download_csv', filename=csv_filename) }}">Download CSV</a>
     |
     <a href="{{ url_for('download_json', filename=json_filename) }}">Download JSON</a>
+    |
+    <a href="{{ url_for('download_txt', filename=txt_filename) }}">Download TXT</a>
 </p>
 <a href="/">Back</a>
 </body>
