@@ -16,6 +16,7 @@ from app.cut_optimizer_app import (
     export_cutting_plan_pdf,
     export_cutting_plan_csv,
     export_cutting_plan_json,
+    export_cutting_plan_text,
     generate_layout_data,
     app,
 )
@@ -26,6 +27,11 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertAlmostEqual(parse_length("7' 6"), 90.0)
         self.assertAlmostEqual(parse_length("10'"), 120.0)
         self.assertAlmostEqual(parse_length("18 3/8"), 18.375)
+
+    def test_parse_length_metric(self):
+        self.assertAlmostEqual(parse_length("100mm"), 100 / 25.4)
+        self.assertAlmostEqual(parse_length("2.54 cm"), 1.0)
+        self.assertAlmostEqual(parse_length("1 m"), 1000 / 25.4)
 
     def test_parse_parts_and_stock(self):
         parts_text = """1 CA195 7'
@@ -91,6 +97,23 @@ class TestCutOptimizer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = pathlib.Path(tmpdir) / 'report.pdf'
             export_cutting_plan_pdf(bins, uncut, 0.0, str(path))
+            self.assertTrue(path.exists())
+            self.assertGreater(path.stat().st_size, 0)
+
+    def test_export_cutting_plan_text(self):
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 100,
+                'remaining': 20,
+                'scrap_pct': 16.7,
+                'parts': [{'mark': 'A', 'length': 100, 'length_str': "8'4"}]
+            }
+        ]
+        uncut = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = pathlib.Path(tmpdir) / 'report.txt'
+            export_cutting_plan_text(bins, uncut, 0.0, str(path))
             self.assertTrue(path.exists())
             self.assertGreater(path.stat().st_size, 0)
 
@@ -180,6 +203,46 @@ class TestCutOptimizer(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.mimetype, 'application/json')
         os.remove(path)
+
+    def test_download_txt_route(self):
+        client = app.test_client()
+        bins = [
+            {
+                'stock_length': 120,
+                'used': 120,
+                'remaining': 0,
+                'scrap_pct': 0.0,
+                'parts': [{'mark': 'A', 'length': 120, 'length_str': "10'"}],
+            }
+        ]
+        uncut = []
+        path = os.path.join(tempfile.gettempdir(), 'route_test.txt')
+        export_cutting_plan_text(bins, uncut, 0.0, path)
+        resp = client.get(f'/download_txt/{os.path.basename(path)}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.mimetype, 'text/plain')
+        os.remove(path)
+
+    def test_default_kerf_env(self):
+        import importlib
+        os.environ['DEFAULT_KERF'] = '1/8'
+        import app.cut_optimizer_app as reloadable
+        importlib.reload(reloadable)
+        client = reloadable.app.test_client()
+        resp = client.get('/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'1/8', resp.data)
+        del os.environ['DEFAULT_KERF']
+        importlib.reload(reloadable)
+
+    def test_scrap_percentage_in_results(self):
+        client = app.test_client()
+        resp = client.post(
+            '/optimize',
+            data={'parts': "1 A 8'", 'stock': "1 10'"}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'20.0%', resp.data)
 
     def test_invalid_parts_input(self):
         with self.assertRaises(ValueError):
